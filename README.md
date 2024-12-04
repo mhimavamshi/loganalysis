@@ -59,3 +59,19 @@ Your Python script should implement the following functionalities:
 
 ## Approaches
 ### **Naive Approach**
+1. Get the threshold value from the command line argument
+2. Go through each line of the log file and parse it using regex 
+3. Take the parsed data and analyze it
+4. Analyzing it involves: counting the requests of the IPs, collecting the failed login attempts and endpoint access count where Counter and defaultdict are used
+5. Displaying the data analysis and Writing it to a CSV file
+
+##### Limitations
+1. Everything is done in a single thread synchronously
+2. File read which is a I/O bound task will block the CPU until it is read (in case of readlines()), here it is iterating using `line in file` if it's a large file
+3. Multiple cores/processors aren't utilized (horizontal scaling)
+
+##### Ideas that may improve
+1. Use multiprocessing or threading (though GIL or context switching might)
+2. Use Async I/O
+3. Buffering/Chunking
+4. Check if regex is a bottleneck and split and other approaches could benefit
