@@ -60,8 +60,8 @@ Your Python script should implement the following functionalities:
 ## Approaches
 ### **Naive Approach**
 
-**Usage**: `$ python naiveanalyze.py [-h] [-t THRESHOLD] [-o OUTPUTFILE] logfile` \ 
-THRESHOLD = 10, OUTPUTFILE = log_analysis_results.csv by default \
+**Usage**: `$ python naiveanalyze.py [-h] [-t THRESHOLD] [-o OUTPUTFILE] logfile`\ 
+THRESHOLD = 10, OUTPUTFILE = log_analysis_results.csv by default\
 **Example**:\
 `$ python naiveanalyze.py -t 15 -o output.csv sample.log`\
 
