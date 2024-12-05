@@ -1,4 +1,5 @@
 import random
+import os
 
 info = []
 
@@ -9,7 +10,7 @@ ip_addresses = [
     "77.74.82.100",
 ]
 
-request_counts = {ip: random.randint(1000, 1500) for ip in ip_addresses}
+request_counts = {ip: random.randint(10_00_00, 20_00_00) for ip in ip_addresses}
 info.append("request counts: " + str(request_counts))
 
 
@@ -55,9 +56,18 @@ with open("test.log", "w") as file:
         # print("written line:", line)
         file.write(line + "\n")
 
+def human_readable_size(size, decimal_places=2):
+    for unit in ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']:
+        if size < 1024.0 or unit == 'PiB':
+            break
+        size /= 1024.0
+    return f"{size:.{decimal_places}f} {unit}"
+
+
 print("Generated test log")
 print(f"written {n} lines")
+print(f"file size is {human_readable_size(os.path.getsize('test.log'))}")
 info.append("endpoint accesses: " + str(endpoint_accesses))
 print('\n'.join(info))
 with open("test.txt", "w") as file:
-    file.write("\n".join(info))
+    file.write("\n".join(info)) 
