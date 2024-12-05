@@ -84,3 +84,9 @@ THRESHOLD = 10, OUTPUTFILE = log_analysis_results.csv by default
 2. Use Async I/O
 3. Buffering/Chunking
 4. Check if regex is a bottleneck and split and other approaches could benefit
+
+### **Multi processing**
+1. Check if there are more than 1 core
+2. If file size is large enough, use a shared queue where chunks of lines are put 
+3. Each core's process gets the chunk from the queue and does local analysis and places it in a global results queue
+4. After all the chunks are read, the results queue is collected and combined
