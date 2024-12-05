@@ -10,7 +10,7 @@ ip_addresses = [
     "77.74.82.100",
 ]
 
-request_counts = {ip: random.randint(10_00_00, 20_00_00) for ip in ip_addresses}
+request_counts = {ip: random.randint(30_00_00, 50_00_00) for ip in ip_addresses}
 info.append("request counts: " + str(request_counts))
 
 
