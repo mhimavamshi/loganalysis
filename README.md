@@ -80,10 +80,13 @@ THRESHOLD = 10, OUTPUTFILE = log_analysis_results.csv by default
 3. Multiple cores/processors aren't utilized (horizontal scaling)
 
 ##### Ideas that may improve
-[X] Use multiprocessing or threading (though GIL or context switching might not make it efficient)
-2. Use Async I/O or mmap
-[X] Buffering/Chunking
-[X] Check if regex is a bottleneck and split and other approaches could benefit
+[x] Use multiprocessing or threading (though GIL or context switching might not make it efficient)
+[ ] Use Async I/O or mmap
+[x] Buffering/Chunking
+[x] Check if regex is a bottleneck and split and other approaches could benefit
+[ ] Clean the code
+[ ] dynamic chunking
+
 
 ### **Multi processing**
 1. Without pooling:
