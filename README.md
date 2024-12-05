@@ -58,15 +58,15 @@ Your Python script should implement the following functionalities:
 ---
 
 ## Approaches
-### **Naive Approach**
+### **Single core Approach**
 
 **Usage**: 
-`$ python naiveanalyze.py [-h] [-t THRESHOLD] [-o OUTPUTFILE] logfile`
+`$ python loganalyzer.py [-h] [-t THRESHOLD] [-o OUTPUTFILE] logfile`
 
 THRESHOLD = 10, OUTPUTFILE = log_analysis_results.csv by default
 
 **Example**:
-`$ python naiveanalyze.py -t 15 -o output.csv sample.log`
+`$ python loganalyzer.py -t 15 -o output.csv sample.log`
 
 1. Get the threshold value from the command line argument
 2. Go through each line of the log file and parse it using regex 
@@ -76,17 +76,22 @@ THRESHOLD = 10, OUTPUTFILE = log_analysis_results.csv by default
 
 ##### Limitations
 1. Everything is done in a single thread synchronously
-2. File read which is a I/O bound task will block the CPU until it is read (in case of readlines()), here it is iterating using `line in file` if it's a large file
+2. File read which is a I/O bound task will block the CPU until it is read (in case of readlines()), here it is iterating using `line in file` if it's a large file. Sequential reading
 3. Multiple cores/processors aren't utilized (horizontal scaling)
 
 ##### Ideas that may improve
-1. Use multiprocessing or threading (though GIL or context switching might)
-2. Use Async I/O
-3. Buffering/Chunking
-4. Check if regex is a bottleneck and split and other approaches could benefit
+[X] Use multiprocessing or threading (though GIL or context switching might not make it efficient)
+2. Use Async I/O or mmap
+[X] Buffering/Chunking
+[X] Check if regex is a bottleneck and split and other approaches could benefit
 
 ### **Multi processing**
-1. Check if there are more than 1 core
-2. If file size is large enough, use a shared queue where chunks of lines are put 
-3. Each core's process gets the chunk from the queue and does local analysis and places it in a global results queue
-4. After all the chunks are read, the results queue is collected and combined
+1. Without pooling:
+    1. Check if there are more than 1 core
+    2. If file size is large enough, use a shared queue where chunks of lines are put 
+    3. Each core's process gets the chunk from the queue and does local analysis and places it in a global results queue
+    4. After all the chunks are read, the results queue is collected and combined
+
+2. With pooling:
+    1. 
+    2. 
