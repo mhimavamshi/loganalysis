@@ -59,5 +59,5 @@ print("Generated test log")
 print(f"written {n} lines")
 info.append("endpoint accesses: " + str(endpoint_accesses))
 print('\n'.join(info))
-with open("text.txt", "w") as file:
+with open("test.txt", "w") as file:
     file.write("\n".join(info))
