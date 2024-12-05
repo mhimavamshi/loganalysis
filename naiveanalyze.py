@@ -139,7 +139,7 @@ class Analyzer:
                 writer.writerow([ip, count])       
 
     def write_to_csv(self, file_path):
-         with open(file_path, mode="w", newline="\n") as csvfile:
+        with open(file_path, mode="w", newline="\n") as csvfile:
             writer = csv.writer(csvfile)
 
             self._write_request_count(writer)
@@ -147,36 +147,10 @@ class Analyzer:
             self._write_endpoint_accesses(writer)
 
             self._write_failed_logins(writer)
+    
 
-   
-        
 
-# class CSVWriter:
-#     @staticmethod
-#     def write_data(dictionary, file_path, ):
-#         with open(file_path, mode="w", newline="") as csvfile:
-#             writer = csv.writer(csvfile)
 
-#             # Write IP Request Counts
-#             writer.writerow(["Requests per IP"])
-#             writer.writerow(["IP Address", "Request Count"])
-#             for ip, count in dictionary:
-#                 writer.writerow([ip, count])
-#             writer.writerow([])
-
-#             # Write Most Accessed Endpoint
-#             writer.writerow(["Most Accessed Endpoint"])
-#             writer.writerow(["Endpoint", "Access Count"])
-#             endpoint, count = self.endpoint_accesses.most_common(1)[0]
-#             writer.writerow([endpoint, count])
-#             writer.writerow([])
-
-#             # Write Suspicious Activity (Failed Logins)
-#             writer.writerow(["Suspicious Activity"])
-#             writer.writerow(["IP Address", "Failed Login Count"])
-#             for ip, count in self.failed_logins.items():
-#                 if count > self.threshold:
-#                     writer.writerow([ip, count])
 
 def main():
     argparser = argparse.ArgumentParser(description="Analyze server logs and generate a csv file.")
@@ -201,7 +175,7 @@ def main():
     # assign the returned data to raw_data if necessary
     raw_data = analyzer.analyze_file(log_file_path, return_data=True)
 
-    # print(raw_data)
+    print(raw_data)
     
     # use the analyzer's pretty print function to show the analyzed data
     analyzer.print()
