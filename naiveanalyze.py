@@ -2,6 +2,8 @@ import re
 from collections import Counter, defaultdict
 import argparse
 import csv
+import multiprocessing
+import os
 
 class Parser:
 
@@ -24,9 +26,94 @@ class Analyzer:
         self.threshold = threshold
         self.request_count = Counter() # counter object to keep track of ip addresses and number of requests made
         self.endpoint_accesses = Counter() # counter object to keep track of endpoints and number of accesses to each 
-        self.failed_logins = defaultdict(int) # dictionary to keep track of ip addresses and number of failed logins made
+        # self.failed_logins = defaultdict(int) # dictionary to keep track of ip addresses and number of failed logins made
+        self.failed_logins = Counter()
 
-    def analyze_file(self, file_path, return_data=False):
+    def _read_file_chunks(self, file_path, shared_queue, num_of_lines = 50000):
+        with open(file_path, "r") as file:
+            while True:
+                lines = file.readlines(num_of_lines)
+                # print(f"read {len(lines)} lines and put on queue")
+                if len(lines) == 0:
+                    break
+                shared_queue.put(lines)
+
+    def _process_chunk(self, shared_queue, results_queue):
+        local_request_count = Counter() # counter object to keep track of ip addresses and number of requests made
+        local_endpoint_accesses = Counter() # counter object to keep track of endpoints and number of accesses to each 
+        local_failed_logins = Counter() # dictionary to keep track of ip addresses and number of failed logins made
+
+        while True:
+            lines = shared_queue.get()
+            if lines is None: break
+            # print(f"{multiprocessing.current_process()}: processing {len(lines)} lines that i got on queue")
+            for line in lines:
+
+                data = self.parser.parse(line)
+
+                if data is None: 
+                    # print(f"WARNING: failed to parse f{line}")
+                    continue
+
+                local_request_count[data['ip']] += 1
+
+
+                local_endpoint_accesses[data['endpoint']] += 1
+
+                if data['message'] == '': continue
+
+                # print(f"Got data: {data}") 
+
+                if data['endpoint'] == "/login" and data['message'] == "Invalid credentials": 
+                    local_failed_logins[data['ip']] += 1
+                    # print(f"Failed login: {data['ip']} detected")
+
+        results_queue.put([local_request_count, local_endpoint_accesses, local_failed_logins])
+
+        # what if we do collect results in real time too? 
+        
+    def _collect_results(self, results_queue):
+        while not results_queue.empty():
+            data = results_queue.get()
+            self.request_count.update(data[0])
+            self.endpoint_accesses.update(data[1])
+            self.failed_logins.update(data[2])
+
+    def multiprocess_analyze(self, file_path, return_data):
+        shared_queue = multiprocessing.Queue()
+        results_queue = multiprocessing.Queue()
+
+        num_analyzers = multiprocessing.cpu_count()
+
+        processes = []
+
+        for _ in range(num_analyzers):
+            process = multiprocessing.Process(target=self._process_chunk, args=(shared_queue, results_queue))
+            processes.append(process)
+            process.start()
+
+        # print(processes)
+        
+        self._read_file_chunks(file_path, shared_queue)
+        
+        for _ in range(num_analyzers):
+            shared_queue.put(None)
+        
+        for process in processes: process.join()
+
+        self._collect_results(results_queue)
+
+        if return_data:
+            return {'requests': dict(self.request_count), 'endpointaccesses': dict(self.endpoint_accesses), 'failedlogins': dict(self.failed_logins)}
+
+    
+    def is_big_file(self, file_path):
+        return os.path.getsize(file_path) > 1024 * 1024
+
+    def analyze_file(self, file_path, return_data=False, multi=True):
+        if multiprocessing.cpu_count() > 1 and self.is_big_file(file_path) and multi:
+            print("Using multiprocessing")
+            return self.multiprocess_analyze(file_path, return_data)
         try:
             with open(file_path, "r") as file:
 
@@ -54,7 +141,9 @@ class Analyzer:
 
                     # if message is absent, continue to next line
 
-                    if not 'message' in data: continue
+                    if data['message'] == '': continue
+
+                    # print(f"Found suspicious login: {data}")
 
                     # if the endpoint is /login and message is "invalid credentials"
                     # then increment the number of failed logins for the ip
