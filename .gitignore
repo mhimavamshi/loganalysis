@@ -1,3 +1,5 @@
-test.csv
-test.log
-test.txt
+test*.csv
+test*.log
+*.txt
+*.lprof
+*.json
