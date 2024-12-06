@@ -3,3 +3,5 @@ test*.log
 *.txt
 *.lprof
 *.json
+__pycache__/
+*.pyc
