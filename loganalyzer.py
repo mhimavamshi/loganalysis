@@ -1,4 +1,5 @@
 from concurrent.futures import ProcessPoolExecutor
+from math import floor
 import multiprocessing.pool
 import re
 from collections import Counter
@@ -19,14 +20,11 @@ class Parser:
         return match.groupdict()
     
     def lightweight_parse(self, line: str) -> tuple:
-        try:
-            parts = line.split()
-            ip = parts[0]
-            endpoint = parts[6]
-            message = ' '.join(parts[10:]) if len(parts) > 10 else ""
-            return ip, endpoint, message.strip('"')
-        except (IndexError, ValueError):
-            return None
+        parts = line.split()
+        ip = parts[0]
+        endpoint = parts[6]
+        message = ' '.join(parts[10:]) if len(parts) > 10 else ""
+        return ip, endpoint, message.strip('"')
 
 
 class Analyzer:
@@ -37,22 +35,28 @@ class Analyzer:
         self.endpoint_accesses = Counter() 
         self.failed_logins = Counter() 
 
-    def _figure_out_lines(self, lines, size):
-        if size < 50:
-            return lines * 2
-        return lines
+    @line_profiler.profile
+    def _figure_out_lines(self, lines, num_of_cores, size, scale_factor=4, min_lines=5_00_000, max_lines=1_00_00_000): 
+        if size < num_of_cores:
+            return max(lines // scale_factor, min_lines) 
+        return min(int(lines * scale_factor), max_lines)
 
     @line_profiler.profile
-    def _read_file_chunks(self, file_path, shared_queue: multiprocessing.Queue, num_of_lines = 50000):
+    def _read_file_chunks(self, file_path, shared_queue: multiprocessing.Queue):
+        num_of_cores = multiprocessing.cpu_count()
+        initial_lines = 50_00_000
         with open(file_path, "r") as file:
             while True:
-                # num_of_lines = self._figure_out_lines(num_of_lines, shared_queue.qsize())
-                # num_of_lines = num
+                num_of_lines = self._figure_out_lines(initial_lines, num_of_cores, shared_queue.qsize())
+                # print(f"INFO: Adding {num_of_lines} lines...")
                 lines = file.readlines(num_of_lines)
                 if len(lines) == 0:
                     break
                 shared_queue.put(lines)
+                # num_of_lines = num
 
+
+    @line_profiler.profile
     def _process_chunk(self, shared_queue, results_queue):
         local_request_count = Counter() 
         local_endpoint_accesses = Counter()   
@@ -72,7 +76,6 @@ class Analyzer:
 
                 if message == '': continue
 
-
                 if endpoint == "/login" and message == "Invalid credentials": 
                     local_failed_logins[ip] += 1
 
@@ -86,14 +89,14 @@ class Analyzer:
             self.endpoint_accesses.update(data[1])
             self.failed_logins.update(data[2])
 
-    @line_profiler.profile
+    # @line_profiler.profile
     def _pool_collect_results(self, result):
         self.request_count.update(result[0])
         self.endpoint_accesses.update(result[1])
         self.failed_logins.update(result[2])
 
 
-    @line_profiler.profile
+    # @line_profiler.profile
     def _pool_read_file_chunks(self, file_path, chunk_size):
         with open(file_path, "r") as file:
             while True:
@@ -103,7 +106,7 @@ class Analyzer:
                 yield lines
 
 
-    @line_profiler.profile
+    # @line_profiler.profile
     def _pool_process_chunk(self, chunk):
         local_request_count = Counter()
         local_endpoint_accesses = Counter() 
@@ -121,10 +124,10 @@ class Analyzer:
 
         return [local_request_count, local_endpoint_accesses, local_failed_logins]
 
-    @line_profiler.profile
+    # @line_profiler.profile
     def multiprocess_analyze_pool(self, file_path, return_data):
-        print("Using pool")
-        chunks = self._pool_read_file_chunks(file_path, chunk_size=8_00_000)  
+        print("INFO: Using pool")
+        chunks = self._pool_read_file_chunks(file_path, chunk_size=5_00_000)  
 
         with ProcessPoolExecutor(max_workers=multiprocessing.cpu_count()) as executor:
             results = executor.map(self._pool_process_chunk, chunks) 
@@ -139,8 +142,10 @@ class Analyzer:
                 "failedlogins": dict(self.failed_logins),
             }
 
-    @line_profiler.profile
+    # @line_profiler.profile
     def multiprocess_analyze(self, file_path, return_data):
+        print("INFO: Using a shared queue")
+
         shared_queue = multiprocessing.Queue()
         results_queue = multiprocessing.Queue()
 
@@ -168,20 +173,71 @@ class Analyzer:
 
     
     def is_big_file(self, file_path):
-        return os.path.getsize(file_path) > 1024 * 1024
+        return os.path.getsize(file_path) > 10 * 1024 * 1024 
     
-    @line_profiler.profile
-    def analyze_file(self, file_path, return_data=False, multi=True):
-
-        if multiprocessing.cpu_count() > 1 and self.is_big_file(file_path) and multi:
-            print("Using multiprocessing")
-            return self.multiprocess_analyze_pool(file_path, return_data)
-        
+    # @line_profiler.profile
+    def single_analyze_dynamic(self, file_path, return_data):
+        import time
         try:
-            print("Using single core")
+            print("INFO Using single core, and dynamic chunking")  
             with open(file_path, "r") as file:
-                chunk_size = 10000
-                while chunk := file.readlines(chunk_size):
+                chunk_size = 1_00_000
+                prev_time = 1
+                factor = 22
+                reduction = 2
+
+                min_chunks = 5_00_000
+                max_chunks = 1_00_00_000
+
+                while chunk := file.readlines(floor(chunk_size)):
+                    start = time.time()
+
+                    for line in chunk: 
+
+                        ip, endpoint, message = self.parser.lightweight_parse(line)
+
+                        self.request_count[ip] += 1
+
+
+                        self.endpoint_accesses[endpoint] += 1
+
+
+                        if message == '': continue
+
+                        if endpoint == "/login" and message == "Invalid credentials": 
+                            self.failed_logins[ip] += 1
+                    
+                    end = time.time()
+                    if end - start < prev_time: 
+                        chunk_size = min(chunk_size * factor, max_chunks) 
+                    else: 
+                        chunk_size = max(chunk_size / factor, min_chunks)
+                        factor = max(factor / reduction, 1)
+
+                    print(f"Chunk size: {chunk_size}, factor: {factor}, curr: {end-start}, prev: {prev_time}")
+                    prev_time = end - start
+
+                if return_data:
+                    return {'requests': dict(self.request_count), 'endpointaccesses': dict(self.endpoint_accesses), 'failedlogins': dict(self.failed_logins)}
+        
+        except FileNotFoundError:
+            print(f"ERROR: provided log file {file_path} not found")
+            return
+            
+        except PermissionError:
+            print(f"ERROR: permission denied for the provided log file {file_path}")
+            return                
+
+
+   
+    @line_profiler.profile
+    def single_analyze(self, file_path, return_data):
+        try:
+            print("INFO: Using single core")  
+            with open(file_path, "r") as file:
+                chunk_size = 7_00_000
+                while chunk := file.readlines(floor(chunk_size)):
+
                     for line in chunk: 
 
                         ip, endpoint, message = self.parser.lightweight_parse(line)
@@ -201,23 +257,35 @@ class Analyzer:
                 if return_data:
                     return {'requests': dict(self.request_count), 'endpointaccesses': dict(self.endpoint_accesses), 'failedlogins': dict(self.failed_logins)}
         
-
         except FileNotFoundError:
             print(f"ERROR: provided log file {file_path} not found")
             return
             
         except PermissionError:
             print(f"ERROR: permission denied for the provided log file {file_path}")
-            return        
+            return      
+
+
+    # @line_profiler.profile
+    def analyze_file(self, file_path, return_data=False, multi=True):
+        pool = False
+
+        if multiprocessing.cpu_count() > 1 and self.is_big_file(file_path) and multi:
+            print("INFO: Using multiprocessing")
+            if pool: return self.multiprocess_analyze_pool(file_path, return_data)
+            return self.multiprocess_analyze(file_path, return_data)
+
+        return self.single_analyze(file_path, return_data)    
 
     def print(self):
 
-        print(f"Using threshold for suspicious logins: {self.threshold}")
+        print(f"INFO: Using threshold for suspicious logins: {self.threshold}")
         print()
 
 
         print("IP Address\tRequest Count")
-        for ip, requests in self.request_count.items():
+        sorted_request_counts = self.request_count.most_common()
+        for ip, requests in sorted_request_counts:
             print(f"{ip}\t{requests}")
         print()
 
