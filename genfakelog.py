@@ -1,17 +1,19 @@
 import random
 import os
+import json
 
-info = []
+info = {}
 
 ip_addresses = [
     "41.248.92.165",
     "196.21.8.175",
     "194.133.66.134",
     "77.74.82.100",
+    "39.178.65.166"
 ]
 
-request_counts = {ip: random.randint(30_00_00, 50_00_00) for ip in ip_addresses}
-info.append("request counts: " + str(request_counts))
+request_counts = {ip: random.randint(50_00_00, 60_00_00) for ip in ip_addresses}
+info["requests"] =  request_counts.copy()
 
 
 endpoints = [
@@ -22,8 +24,8 @@ endpoints = [
     "/dashboard"
 ]
 
-failed_logins = {ip: random.randint(10, 50) for ip in random.sample(ip_addresses, 2)}
-info.append("failed logins: " + str(failed_logins))
+failed_logins = {ip: random.randint(10, 50) for ip in random.sample(ip_addresses, 3)}
+info["failedlogins"] = failed_logins.copy()
 
 
 endpoint_accesses = {endpoint: 0 for endpoint in endpoints}
@@ -55,6 +57,7 @@ with open("test.log", "w") as file:
         n += 1
         # print("written line:", line)
         file.write(line + "\n")
+        # print(f"written {n} lines \r", sep="", end="", flush=True)
 
 def human_readable_size(size, decimal_places=2):
     for unit in ['B', 'KiB', 'MiB', 'GiB', 'TiB', 'PiB']:
@@ -67,7 +70,9 @@ def human_readable_size(size, decimal_places=2):
 print("Generated test log")
 print(f"written {n} lines")
 print(f"file size is {human_readable_size(os.path.getsize('test.log'))}")
-info.append("endpoint accesses: " + str(endpoint_accesses))
-print('\n'.join(info))
-with open("test.txt", "w") as file:
-    file.write("\n".join(info)) 
+info["endpointaccesses"] = endpoint_accesses.copy()
+print(info)
+# print('\n'.join(info))
+with open("test.json", "w") as file:
+    json.dump(info, file)
+print("written to test.json")
