@@ -81,21 +81,20 @@ THRESHOLD = 10, OUTPUTFILE = log_analysis_results.csv by default
 
 ##### Ideas that may improve
 
-[x] Use multiprocessing or threading (though GIL or context switching might not make it efficient)
+- [x] Use multiprocessing or threading (though GIL or context switching might not make it efficient) 
 
-[ ] Use Async I/O or mmap
+- [ ] Use Async I/O or mmap
 
-[x] Buffering/Chunking
+- [x] Buffering/Chunking
 
-[x] Check if regex is a bottleneck and split and other approaches could benefit
+- [x] Check if regex is a bottleneck and split and other approaches could benefit
 
-[x] only parse the relevant information
+- [x] only parse the relevant information
 
-[ ] Clean the code
+- [ ] Clean the code
 
-[ ] dynamic chunking
+- [x] dynamic chunking
 
-[]
 
 ### **Multi processing**
 1. Without pooling:
@@ -103,7 +102,8 @@ THRESHOLD = 10, OUTPUTFILE = log_analysis_results.csv by default
     2. If file size is large enough, use a shared queue where chunks of lines are put 
     3. Each core's process gets the chunk from the queue and does local analysis and places it in a global results queue
     4. After all the chunks are read, the results queue is collected and combined
+    5. The chunk size is increased or decreased depending on the number of cores and approximate queue size - but is not completely dynamic (doesn't take processing time etc into account)
 
 2. With pooling:
-    1. 
-    2. 
+    1. The ProcessPoolExecutor object manages the whole process mapping chunks
+    2. The results are collected and gathered 
