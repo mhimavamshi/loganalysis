@@ -5,3 +5,4 @@ test*.log
 *.json
 __pycache__/
 *.pyc
+sample.csv
