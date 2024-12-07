@@ -1,5 +1,16 @@
 ## Assignment: Log Analysis Script
 
+### **Usage**
+
+`$ python loganalyzer.py [-h] [-t THRESHOLD] [-o OUTPUTFILE] logfile`
+
+THRESHOLD = 10, OUTPUTFILE = log_analysis_results.csv by default
+
+**Example**:
+`$ python loganalyzer.py -t 15 -o output.csv sample.log`
+
+---
+
 ### **Objective**
 
 The goal of this assignment is to assess your ability to write a Python script that processes log files to extract and analyze key information. This assignment evaluates your proficiency in **file handling**, **string manipulation**, and **data analysis**, which are essential skills for cybersecurity-related programming tasks.
@@ -59,14 +70,6 @@ Your Python script should implement the following functionalities:
 
 ## Approaches
 ### **Single core Approach**
-
-**Usage**: 
-`$ python loganalyzer.py [-h] [-t THRESHOLD] [-o OUTPUTFILE] logfile`
-
-THRESHOLD = 10, OUTPUTFILE = log_analysis_results.csv by default
-
-**Example**:
-`$ python loganalyzer.py -t 15 -o output.csv sample.log`
 
 1. Get the threshold value from the command line argument
 2. Go through each line of the log file and parse it using regex 
