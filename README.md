@@ -2,14 +2,14 @@
 
 ### **Usage**
 
-```bash
+```console
 $ python loganalyzer.py [-h] [-t THRESHOLD] [-o OUTPUTFILE] logfile
 ```
 
 THRESHOLD = 10, OUTPUTFILE = log_analysis_results.csv by default
 
 **Example**:
-```bash
+```console
 $ python loganalyzer.py -t 15 -o output.csv sample.log
 ```
 
