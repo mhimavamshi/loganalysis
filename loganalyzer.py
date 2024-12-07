@@ -297,27 +297,43 @@ class Analyzer:
         
         print("Suspicious Activity Detected:")
         print("IP Address\tFailed Login Attempts")
-        
-        
-        for ip, failed_attempts in self.failed_logins.items():
-            if failed_attempts > self.threshold: print(f"{ip}\t{failed_attempts}")
+
+        failed_logins = [(ip, failed_attempts) for ip, failed_attempts in self.failed_logins.most_common() if failed_attempts > self.threshold]
+
+        if failed_logins:
+            for ip, failed_attempts in failed_logins: print(f"{ip}\t{failed_attempts}")  
+        else:
+            print()
+            print(f"No suspicious activity detected (threshold: {self.threshold})")
+
+        # empty = True
+        # for ip, failed_attempts in self.failed_logins.most_common():
+        #     if failed_attempts > self.threshold: 
+        #         empty = False
+        #         print(f"{ip}\t{failed_attempts}")
+        # if empty: print(f"No suspicious activity detected (threshold: {self.threshold})")
+
+
     
     def _write_request_count(self, writer):
-        writer.writerow(["Requests per IP"])
+        # writer.writerow(["Requests per IP"])
+        writer.writerow([])
         writer.writerow(["IP Address", "Request Count"])
         for ip, count in self.request_count.items():
             writer.writerow([ip, count])
         writer.writerow([])
 
     def _write_endpoint_accesses(self, writer):
-        writer.writerow(["Most Accessed Endpoint"])
+        # writer.writerow(["Most Accessed Endpoint"])
+        writer.writerow([])
         writer.writerow(["Endpoint", "Access Count"])
         endpoint, count = self.endpoint_accesses.most_common(1)[0]
         writer.writerow([endpoint, count])
         writer.writerow([])
 
     def _write_failed_logins(self, writer):
-        writer.writerow(["Suspicious Activity"])
+        # writer.writerow(["Suspicious Activity"])
+        writer.writerow([])
         writer.writerow(["IP Address", "Failed Login Count"])
         for ip, count in self.failed_logins.items():
             if count > self.threshold:
