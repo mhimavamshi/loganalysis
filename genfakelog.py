@@ -12,7 +12,7 @@ ip_addresses = [
     "39.178.65.166"
 ]
 
-request_counts = {ip: random.randint(90_00_00, 1_00_00_00) for ip in ip_addresses}
+request_counts = {ip: random.randint(1_00_00_00, 2_00_00_00) for ip in ip_addresses}
 info["requests"] =  request_counts.copy()
 
 
