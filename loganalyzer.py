@@ -289,7 +289,7 @@ class Analyzer:
 
    
     # @line_profiler.profile
-    def single_analyze(self, file_path, return_data, chunk_size=7_00_000):
+    def single_analyze(self, file_path, return_data, chunk_size=55_000):
         '''
         Reads the file in chunks of lines and parses and retrieves the request counts, endpoint accesses, failed logins.
         Returns the data if needed.
