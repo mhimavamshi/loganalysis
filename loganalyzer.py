@@ -7,8 +7,8 @@ import argparse
 import csv
 import multiprocessing
 import os
-import mmap
-import line_profiler
+# import mmap
+# import line_profiler
 
 class Parser:
 
@@ -35,13 +35,13 @@ class Analyzer:
         self.endpoint_accesses = Counter() 
         self.failed_logins = Counter() 
 
-    @line_profiler.profile
+    # @line_profiler.profile
     def _figure_out_lines(self, lines, num_of_cores, size, scale_factor=4, min_lines=5_00_000, max_lines=1_00_00_000): 
         if size < num_of_cores:
             return max(lines // scale_factor, min_lines) 
         return min(int(lines * scale_factor), max_lines)
 
-    @line_profiler.profile
+    # @line_profiler.profile
     def _read_file_chunks(self, file_path, shared_queue: multiprocessing.Queue):
         num_of_cores = multiprocessing.cpu_count()
         initial_lines = 50_00_000
@@ -56,7 +56,7 @@ class Analyzer:
                 # num_of_lines = num
 
 
-    @line_profiler.profile
+    # @line_profiler.profile
     def _process_chunk(self, shared_queue, results_queue):
         local_request_count = Counter() 
         local_endpoint_accesses = Counter()   
@@ -81,7 +81,7 @@ class Analyzer:
 
         results_queue.put([local_request_count, local_endpoint_accesses, local_failed_logins])
         
-    @line_profiler.profile    
+    # @line_profiler.profile    
     def _collect_results(self, results_queue):
         while not results_queue.empty():
             data = results_queue.get()
@@ -214,7 +214,7 @@ class Analyzer:
                         chunk_size = max(chunk_size / factor, min_chunks)
                         factor = max(factor / reduction, 1)
 
-                    print(f"Chunk size: {chunk_size}, factor: {factor}, curr: {end-start}, prev: {prev_time}")
+                    # print(f"Chunk size: {chunk_size}, factor: {factor}, curr: {end-start}, prev: {prev_time}")
                     prev_time = end - start
 
                 if return_data:
@@ -230,7 +230,7 @@ class Analyzer:
 
 
    
-    @line_profiler.profile
+    # @line_profiler.profile
     def single_analyze(self, file_path, return_data):
         try:
             print("INFO: Using single core")  
@@ -303,18 +303,21 @@ class Analyzer:
             if failed_attempts > self.threshold: print(f"{ip}\t{failed_attempts}")
     
     def _write_request_count(self, writer):
+        writer.writerow(["Requests per IP"])
         writer.writerow(["IP Address", "Request Count"])
         for ip, count in self.request_count.items():
             writer.writerow([ip, count])
         writer.writerow([])
 
     def _write_endpoint_accesses(self, writer):
+        writer.writerow(["Most Accessed Endpoint"])
         writer.writerow(["Endpoint", "Access Count"])
         endpoint, count = self.endpoint_accesses.most_common(1)[0]
         writer.writerow([endpoint, count])
         writer.writerow([])
 
     def _write_failed_logins(self, writer):
+        writer.writerow(["Suspicious Activity"])
         writer.writerow(["IP Address", "Failed Login Count"])
         for ip, count in self.failed_logins.items():
             if count > self.threshold:
@@ -351,9 +354,9 @@ def main():
 
     analyzer = Analyzer(threshold=threshold)
 
-    raw_data = analyzer.analyze_file(log_file_path, return_data=True, multi=False)
+    raw_data = analyzer.analyze_file(log_file_path, return_data=True, multi=True)
 
-    print(raw_data)
+    # print(raw_data)
     
     analyzer.print()
 
@@ -366,7 +369,7 @@ def main():
         import json
         with open("output.json", "w") as file:
             json.dump(raw_data, file)
-        print("output written to output.json")
+        print("INFO: output written to output.json")
     
 if __name__ == "__main__":
     main()
